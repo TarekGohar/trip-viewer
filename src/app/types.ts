@@ -8,8 +8,9 @@ export interface Trip {
   endDate: string;
   location: string;
   tags: string[];
+  imageUrl?: string;
   userId: string;
-  dailyActivities?: DailyActivity[];
+  dailyActivities: Activity[];
   createdAt: string;
   updatedAt: string;
 }
@@ -26,4 +27,15 @@ export interface DailyActivity {
   tripId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  time?: string;
+  notes?: string;
+  tags: string[];
+  date: string;
 } 
