@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always make the UI modern and clean.
+This is an app designed for a trip planner that wants to show important information about various trips.
+Keep the code clean and concise.
+If a slution requires refactorign the code, do it!
