@@ -4,11 +4,22 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import UserMenu from "./components/UserMenu";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useState, useEffect } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
 function Header() {
   const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render anything until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <nav className="bg-white border-b border-gray-100">

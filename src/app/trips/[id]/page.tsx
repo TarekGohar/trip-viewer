@@ -5,6 +5,7 @@ import { Trip, DailyActivity } from "../../types";
 import { format, parseISO } from "date-fns";
 import TripCard from "../../components/TripCard";
 import { useParams } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 
 interface ActivityModalProps {
   isOpen: boolean;
@@ -145,6 +146,22 @@ export default function TripPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [generalDescription, setGeneralDescription] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { user } = await getCurrentUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setCurrentUserId(null);
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -218,6 +235,36 @@ export default function TripPage() {
     }
   };
 
+  const handleUpdateDescription = async () => {
+    if (!trip) return;
+
+    try {
+      const response = await fetch(`/api/trips/${tripId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...trip,
+          generalDescription: generalDescription || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update description");
+      }
+
+      const data = await response.json();
+      setTrip(data.trip);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating description:", error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const canEdit = currentUserId === trip?.userId;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -265,13 +312,48 @@ export default function TripPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[120rem] mx-auto px-6 py-16">
-        <div className="bg-white rounded-2xl p-8 mb-16">
+        <div className="bg-white rounded-2xl p-8 mb-8">
           <TripCard
             trip={trip}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             showActions={true}
           />
+        </div>
+
+        {/* General Description Section */}
+        <div className="bg-white rounded-2xl p-8 mb-16">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Trip Overview
+            </h2>
+            {canEdit && (
+              <button
+                onClick={() => {
+                  if (isEditing) {
+                    handleUpdateDescription();
+                  } else {
+                    setGeneralDescription(trip?.generalDescription || "");
+                    setIsEditing(true);
+                  }
+                }}
+                className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                {isEditing ? "Save Changes" : "Edit Description"}
+              </button>
+            )}
+          </div>
+          {isEditing ? (
+            <textarea
+              value={generalDescription}
+              onChange={(e) => setGeneralDescription(e.target.value)}
+              className="w-full h-32 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Add a general description of your trip..."
+            />
+          ) : (
+            <p className="text-gray-600 leading-relaxed">
+              {trip?.generalDescription || "No description added yet."}
+            </p>
+          )}
         </div>
 
         <div className="space-y-16">
@@ -281,25 +363,27 @@ export default function TripPage() {
                 <h2 className="text-3xl font-semibold text-gray-900">
                   {format(parseISO(date), "EEEE, MMMM d")}
                 </h2>
-                <button
-                  onClick={() => {
-                    setSelectedDate(date);
-                    setIsModalOpen(true);
-                  }}
-                  className="bg-gray-900 text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition-all text-sm font-medium flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Add Activity
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => {
+                      setSelectedDate(date);
+                      setIsModalOpen(true);
+                    }}
+                    className="bg-gray-900 text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition-all text-sm font-medium flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Add Activity
+                  </button>
+                )}
               </div>
 
               {activitiesByDate[date]?.length ? (

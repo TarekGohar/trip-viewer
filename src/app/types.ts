@@ -10,7 +10,8 @@ export interface Trip {
   tags: string[];
   imageUrl?: string;
   userId: string;
-  dailyActivities: Activity[];
+  dailyActivities: DailyActivity[];
+  generalDescription?: string;
   createdAt: string;
   updatedAt: string;
 }

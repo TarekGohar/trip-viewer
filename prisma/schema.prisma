@@ -25,18 +25,20 @@ model User {
 }
 
 model Trip {
-  id              String         @id @default(uuid())
+  id              String          @id @default(cuid())
   title           String
   description     String
   startDate       DateTime
   endDate         DateTime
   location        String
   tags            String[]
+  imageUrl        String?
   userId          String
-  user            User           @relation(fields: [userId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
   dailyActivities DailyActivity[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  generalDescription String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model DailyActivity {

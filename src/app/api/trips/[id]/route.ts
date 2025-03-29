@@ -36,16 +36,34 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
+    
+    // First, get the current trip to ensure it exists
+    const currentTrip = await prisma.trip.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!currentTrip) {
+      return NextResponse.json(
+        { error: "Trip not found" },
+        { status: 404 }
+      );
+    }
+
+    // Prepare update data
+    const updateData = {
+      title: body.title,
+      description: body.description,
+      startDate: new Date(body.startDate),
+      endDate: new Date(body.endDate),
+      location: body.location,
+      tags: body.tags,
+      generalDescription: body.generalDescription || null,
+    };
+
+    // Update the trip
     const trip = await prisma.trip.update({
       where: { id: params.id },
-      data: {
-        title: body.title,
-        description: body.description,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        location: body.location,
-        tags: body.tags,
-      },
+      data: updateData,
       include: {
         dailyActivities: true,
       },

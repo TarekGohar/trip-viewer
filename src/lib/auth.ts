@@ -14,7 +14,9 @@ export interface AuthResponse {
 
 export async function getCurrentUser(): Promise<AuthResponse> {
   try {
-    const response = await fetch('/api/auth');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth`, {
+      credentials: 'include',
+    });
     const data = await response.json();
     return { user: data.user, error: data.error };
   } catch (error) {
@@ -25,11 +27,12 @@ export async function getCurrentUser(): Promise<AuthResponse> {
 
 export async function signIn(email: string, password: string): Promise<AuthResponse> {
   try {
-    const response = await fetch('/api/auth', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ action: 'signin', email, password }),
     });
     return response.json();
@@ -41,11 +44,12 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
 
 export async function signUp(email: string, password: string): Promise<AuthResponse> {
   try {
-    const response = await fetch('/api/auth', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ action: 'signup', email, password }),
     });
     return response.json();
@@ -57,11 +61,12 @@ export async function signUp(email: string, password: string): Promise<AuthRespo
 
 export async function signOut(): Promise<void> {
   try {
-    await fetch('/api/auth', {
+    await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ action: 'signout' }),
     });
   } catch (error) {
