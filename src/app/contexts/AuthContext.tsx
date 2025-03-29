@@ -9,11 +9,11 @@ interface AuthContextType {
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ error: string | null }>;
+  ) => Promise<{ user: User | null; error: string | null }>;
   signUp: (
     email: string,
     password: string
-  ) => Promise<{ error: string | null }>;
+  ) => Promise<{ user: User | null; error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -26,8 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const { user } = await getCurrentUser();
-        setUser(user);
+        console.log("Initializing auth...");
+        const { user, error } = await getCurrentUser();
+        console.log("Initial user state:", { user, error });
+        if (error) {
+          console.error("Error getting current user:", error);
+        } else {
+          setUser(user);
+        }
       } catch (error) {
         console.error("Error initializing auth:", error);
       } finally {
@@ -38,11 +44,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleSignIn = async (email: string, password: string) => {
+    console.log("Handling sign in...");
     const { user: newUser, error } = await signIn(email, password);
+    console.log("Sign in result:", { newUser, error });
     if (newUser) {
       setUser(newUser);
     }
-    return { error };
+    return { user: newUser, error };
   };
 
   const handleSignUp = async (email: string, password: string) => {
@@ -50,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (newUser) {
       setUser(newUser);
     }
-    return { error };
+    return { user: newUser, error };
   };
 
   const handleSignOut = async () => {

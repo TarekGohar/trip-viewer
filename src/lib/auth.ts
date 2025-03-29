@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import bcrypt from 'bcryptjs';
 
 export interface User {
   id: string;
@@ -8,7 +9,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User | null;
-  error?: string | null;
+  error: string | null;
 }
 
 export async function getCurrentUser(): Promise<AuthResponse> {

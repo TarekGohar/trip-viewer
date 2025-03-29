@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 function Header() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return (
     <nav className="bg-white border-b border-gray-100">
@@ -66,7 +66,21 @@ function Header() {
                 <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
               </svg>
             </button>
-            {user && <UserMenu user={user} />}
+            {loading ? (
+              <div className="w-10 h-10 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : user ? (
+              <div className="ml-2">
+                <UserMenu user={user} />
+              </div>
+            ) : (
+              <a
+                href="/login"
+                className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                Sign in
+              </a>
+            )}
           </div>
         </div>
       </div>
