@@ -263,6 +263,37 @@ export default function TripPage() {
     }
   };
 
+  const handleDeleteActivity = async (activityId: string) => {
+    if (!trip) return;
+
+    try {
+      const response = await fetch(`/api/trips/${tripId}/activities`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: activityId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete activity");
+      }
+
+      // Update the trip state by removing the deleted activity
+      setTrip((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          dailyActivities: prev.dailyActivities.filter(
+            (activity) => activity.id !== activityId
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+    }
+  };
+
   const canEdit = currentUserId === trip?.userId;
 
   if (loading) {
@@ -415,11 +446,30 @@ export default function TripPage() {
                             {activity.location}
                           </div>
                         </div>
-                        {activity.time && (
-                          <span className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-lg">
-                            {activity.time}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-4">
+                          {activity.time && (
+                            <span className="text-sm font-medium text-gray-500 bg-white px-4 py-2 rounded-lg">
+                              {activity.time}
+                            </span>
+                          )}
+                          {canEdit && (
+                            <button
+                              onClick={() => handleDeleteActivity(activity.id)}
+                              className="text-red-600 hover:text-red-700">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {activity.notes && (
                         <p className="mt-4 text-gray-600 text-sm">
