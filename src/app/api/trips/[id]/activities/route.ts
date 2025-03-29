@@ -57,26 +57,31 @@ export async function POST(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const { id: tripId } = await params;
+    const { id: tripId } = await context.params;
     const authError = await checkTripOwnership(tripId);
     if (authError) {
-      return NextResponse.json(
-        { error: authError.error },
-        { status: authError.status }
-      );
+      return authError;
     }
 
     const body = await request.json();
+    const formattedDate = new Date(body.date);
+    if (isNaN(formattedDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid date format" },
+        { status: 400 }
+      );
+    }
+
     const activity = await prisma.dailyActivity.update({
       where: { id: body.id },
       data: {
         title: body.title,
         description: body.description,
         location: body.location,
-        date: new Date(body.date),
+        date: formattedDate,
         time: body.time,
         notes: body.notes,
         tags: body.tags,

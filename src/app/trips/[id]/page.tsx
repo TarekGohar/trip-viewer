@@ -14,15 +14,40 @@ interface ActivityModalProps {
     activity: Omit<DailyActivity, "id" | "tripId" | "createdAt" | "updatedAt">
   ) => void;
   date: string;
+  activity: DailyActivity | null;
 }
 
-function ActivityModal({ isOpen, onClose, onSave, date }: ActivityModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
-  const [time, setTime] = useState("");
-  const [notes, setNotes] = useState("");
-  const [tags, setTags] = useState("");
+function ActivityModal({
+  isOpen,
+  onClose,
+  onSave,
+  date,
+  activity,
+}: ActivityModalProps) {
+  const [title, setTitle] = useState(activity?.title || "");
+  const [description, setDescription] = useState(activity?.description || "");
+  const [location, setLocation] = useState(activity?.location || "");
+  const [time, setTime] = useState(activity?.time || "");
+  const [notes, setNotes] = useState(activity?.notes || "");
+  const [tags, setTags] = useState(activity?.tags.join(", ") || "");
+
+  useEffect(() => {
+    if (activity) {
+      setTitle(activity.title);
+      setDescription(activity.description);
+      setLocation(activity.location);
+      setTime(activity.time || "");
+      setNotes(activity.notes || "");
+      setTags(activity.tags.join(", "));
+    } else {
+      setTitle("");
+      setDescription("");
+      setLocation("");
+      setTime("");
+      setNotes("");
+      setTags("");
+    }
+  }, [activity, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +55,7 @@ function ActivityModal({ isOpen, onClose, onSave, date }: ActivityModalProps) {
       title,
       description,
       location,
-      date,
+      date: activity?.date || date,
       time,
       notes,
       tags: tags
@@ -47,7 +72,7 @@ function ActivityModal({ isOpen, onClose, onSave, date }: ActivityModalProps) {
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-lg w-full p-8">
         <h3 className="text-2xl font-semibold text-gray-900 mb-8">
-          Add Activity
+          {activity ? "Edit Activity" : "Add Activity"}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -130,7 +155,7 @@ function ActivityModal({ isOpen, onClose, onSave, date }: ActivityModalProps) {
             <button
               type="submit"
               className="bg-gray-900 text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition-all">
-              Add Activity
+              {activity ? "Save Changes" : "Add Activity"}
             </button>
           </div>
         </form>
@@ -149,6 +174,9 @@ export default function TripPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [generalDescription, setGeneralDescription] = useState("");
+  const [editingActivity, setEditingActivity] = useState<DailyActivity | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -214,24 +242,36 @@ export default function TripPage() {
 
     try {
       const response = await fetch(`/api/trips/${tripId}/activities`, {
-        method: "POST",
+        method: editingActivity ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(activity),
+        body: JSON.stringify({
+          ...activity,
+          id: editingActivity?.id,
+        }),
       });
       const data = await response.json();
 
-      // Update the trip with the new activity
+      // Update the trip with the new/updated activity
       setTrip((prev) => {
         if (!prev) return prev;
+        if (editingActivity) {
+          return {
+            ...prev,
+            dailyActivities: prev.dailyActivities.map((a) =>
+              a.id === editingActivity.id ? data.activity : a
+            ),
+          };
+        }
         return {
           ...prev,
           dailyActivities: [...(prev.dailyActivities || []), data.activity],
         };
       });
+      setEditingActivity(null);
     } catch (error) {
-      console.error("Error adding activity:", error);
+      console.error("Error saving activity:", error);
     }
   };
 
@@ -453,21 +493,39 @@ export default function TripPage() {
                             </span>
                           )}
                           {canEdit && (
-                            <button
-                              onClick={() => handleDeleteActivity(activity.id)}
-                              className="text-red-600 hover:text-red-700">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingActivity(activity);
+                                  setIsModalOpen(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-700">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor">
+                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteActivity(activity.id)
+                                }
+                                className="text-red-600 hover:text-red-700">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -504,9 +562,13 @@ export default function TripPage() {
 
       <ActivityModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingActivity(null);
+        }}
         onSave={handleAddActivity}
         date={selectedDate}
+        activity={editingActivity}
       />
     </div>
   );
